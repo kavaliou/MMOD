@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-from generator import MiddleOfSquareGenerator, MultiCongGenerator
+from generator import MiddleOfSquareGenerator, MultiCongGenerator, GaussGenerator
 
 
 def build_hist(title, numbers, n, m):
@@ -34,6 +34,13 @@ def calculate_r(numbers, n, s):
 
 # MiddleOfSquareGenerator 123 1123 3123
 if __name__ == '__main__':
+    build_hist('Gauss', GaussGenerator(0, 0.2).get_generator(), 100000, 100)
+    build_hist('Gauss', GaussGenerator(0, 0.5).get_generator(), 100000, 100)
+    build_hist('Gauss', GaussGenerator(0, 1).get_generator(), 100000, 100)
+    build_hist('Gauss', GaussGenerator(-2, 5).get_generator(), 100000, 100)
+
+    exit()
+
     for i in xrange(123, 4000, 1000):
         print calculate_ter_ver_values(MiddleOfSquareGenerator(i).get_generator(), 10000)
         print calculate_r(MiddleOfSquareGenerator(i).get_generator(), 10000, 15)
