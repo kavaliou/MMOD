@@ -1,12 +1,10 @@
-from helpers import Request
-
-
 class Channel(object):
     STATE_FREE = 0
     STATE_WORKING = 1
     STATE_BLOCKED = 2
 
     def __init__(self, distribution_generator):
+        self.requests_factory = None
         self.generator = distribution_generator
         self.state = self.STATE_FREE
         self.work_end_time = None
@@ -40,12 +38,13 @@ class Channel(object):
 
 
 class InputChannel(Channel):
-    def __init__(self, distribution_generator, rejected_requests_watcher=None):
+    def __init__(self, distribution_generator, requests_factory, rejected_requests_watcher=None):
         super(InputChannel, self).__init__(distribution_generator)
         self.rejected_requests_watcher = rejected_requests_watcher
+        self.requests_factory = requests_factory
 
     def block(self):
-        if self.rejected_requests_watcher is not None:
+        if self.rejected_requests_watcher is not None and self.current_request is not None:
             self.rejected_requests_watcher.append(self.current_request)
-        self.state = self.STATE_FREE
-        self.push_request(self.work_end_time, Request(self.work_end_time))
+            self.current_request = None
+            self.state = self.STATE_FREE

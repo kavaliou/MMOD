@@ -1,5 +1,5 @@
 from imitation_modeling.channels import Channel, InputChannel
-from imitation_modeling.helpers import Hoarder, Request
+from imitation_modeling.helpers import Hoarder
 
 
 class Phase(object):
@@ -29,15 +29,20 @@ class Phase(object):
 
 
 class InputPhase(Phase):
-    def __init__(self, channels_size, distribution_class, distribution_arguments, rejected_requests_watcher=None):
+    def __init__(self, channels_size, distribution_class, distribution_arguments,
+                 requests_factory, rejected_requests_watcher=None):
         super(InputPhase, self).__init__(
             channels_size, distribution_class, distribution_arguments,
-            channel_class=InputChannel, channel_kwargs=dict(rejected_requests_watcher=rejected_requests_watcher)
+            channel_class=InputChannel,
+            channel_kwargs=dict(
+                requests_factory=requests_factory, rejected_requests_watcher=rejected_requests_watcher
+            )
         )
 
     def process(self, current_time, previous_phase):
         for channel in self.get_free_channels():
-            channel.push_request(current_time, Request(current_time))
+            if channel.requests_factory.need_request():
+                channel.push_request(current_time, channel.requests_factory.create_request(current_time))
 
 
 class OutputPhase(Phase):
