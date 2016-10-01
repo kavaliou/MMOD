@@ -1,7 +1,8 @@
 import matplotlib.pyplot as plt
 
 from generators import MiddleOfSquareGenerator, MultiCongGenerator, \
-    GaussGenerator, UniformDistributionGenerator, SimpsonDistributionGenerator
+    GaussGenerator, UniformDistributionGenerator, SimpsonDistributionGenerator, \
+    ExponentialDistributionGenerator
 
 
 def build_hist(title, numbers, n, m):
@@ -34,6 +35,7 @@ def calculate_r(numbers, n, s):
 
 
 if __name__ == '__main__':
+    build_hist('Exponential', ExponentialDistributionGenerator(1), 10000, 100)
     build_hist('Gauss', GaussGenerator(5, 2), 10000, 100)
     build_hist('Uniform', UniformDistributionGenerator(3, 9), 10000, 100)
     build_hist('Simpson', SimpsonDistributionGenerator(2, 5), 10000, 100)

@@ -1,4 +1,5 @@
 from random import randint
+import math
 
 from primesieve import nth_prime
 
@@ -71,3 +72,12 @@ class SimpsonDistributionGenerator(GeneratorMixin):
 
     def next_number(self):
         return sum(map(next, self.R))
+
+
+class ExponentialDistributionGenerator(GeneratorMixin):
+    def __init__(self, lamb):
+        self.lamb = lamb
+        self.R = UniformDistributionGenerator(0, 1)
+
+    def next_number(self):
+        return (-1./self.lamb) * math.log(next(self.R))
