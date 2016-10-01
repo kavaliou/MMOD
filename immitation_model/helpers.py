@@ -2,6 +2,14 @@ from generators import GaussGenerator, SimpsonDistributionGenerator, \
     UniformDistributionGenerator, ExponentialDistributionGenerator
 
 
+class RejectedRequestsWatcher(object):
+    def __init__(self):
+        self.rejected_requests = []
+
+    def append(self, time):
+        self.rejected_requests.append(time)
+
+
 class Channel(object):
     STATE_FREE = 0
     STATE_WORKING = 1
@@ -32,6 +40,18 @@ class Channel(object):
         self.state = self.STATE_BLOCKED
 
 
+class InputChannel(Channel):
+    def __init__(self, distribution_generator, rejected_requests_watcher=None):
+        super(InputChannel, self).__init__(distribution_generator)
+        self.rejected_requests_watcher = rejected_requests_watcher
+
+    def block(self):
+        if self.rejected_requests_watcher is not None:
+            self.rejected_requests_watcher.append(round(self.work_end_time, 5))
+        self.state = self.STATE_FREE
+        self.calculate_work_end_time(self.work_end_time)
+
+
 class Hoarder(object):
     def __init__(self, size):
         self.size = size
@@ -51,9 +71,12 @@ class Hoarder(object):
 
 
 class Phase(object):
-    def __init__(self, channels_size, distribution_class=None, distribution_arguments=None):
+    def __init__(self, channels_size, distribution_class=None, distribution_arguments=None,
+                 channel_class=None, channel_kwargs=None):
+        channel_class = channel_class or Channel
+        channel_kwargs = channel_kwargs or {}
         self.channels = [
-            Channel(distribution_class(**distribution_arguments))
+            channel_class(distribution_class(**distribution_arguments), **channel_kwargs)
             for _ in xrange(channels_size)
         ]
 
@@ -74,9 +97,10 @@ class Phase(object):
 
 
 class InputPhase(Phase):
-    def __init__(self, channels_size, distribution_class, distribution_arguments):
+    def __init__(self, channels_size, distribution_class, distribution_arguments, rejected_requests_watcher=None):
         super(InputPhase, self).__init__(
-            channels_size, distribution_class, distribution_arguments
+            channels_size, distribution_class, distribution_arguments,
+            channel_class=InputChannel, channel_kwargs=dict(rejected_requests_watcher=rejected_requests_watcher)
         )
 
     def process(self, current_time, previous_phase):
@@ -122,22 +146,39 @@ class ChannelPhase(Phase):
 
 
 class Model(object):
-    def __init__(self):
-        pass
+    def __init__(self, number_of_requests, channel_phases, time_delta=0.01):
+        self.number_of_requests = number_of_requests
+        self.current_time = 0.0
+        self.time_delta = time_delta
+        self.phases = []
+        self.rejected_requests_watcher = RejectedRequestsWatcher()
+
+        input_phase = InputPhase(1, ExponentialDistributionGenerator, dict(lamb=1), self.rejected_requests_watcher)
+        input_phase.channels[0].calculate_work_end_time(self.current_time)
+
+        self.phases.append(input_phase)
+        for channel_phase in channel_phases:
+            self.phases.append(ChannelPhase(**channel_phase))
+        self.phases.append(OutputPhase())
+
+    def run(self):
+        while self.current_time <= 30:
+            for current_phase, previous_phase in reversed(zip(self.phases, [None] + self.phases[:-1])):
+                current_phase.process(self.current_time, previous_phase)
+
+            self.current_time += self.time_delta
+
+        print self.phases[-1].responses_times
+        print self.rejected_requests_watcher.rejected_requests
 
 
-input_phase = InputPhase(1, ExponentialDistributionGenerator, dict(lamb=1))
-first_phase = ChannelPhase(1, 5, GaussGenerator, dict(m=5, d=2))
-second_phase = ChannelPhase(2, 2, GaussGenerator, dict(m=5, d=2))
-output_phase = OutputPhase()
+if __name__ == '__main__':
+    channel_phases = [
+        dict(hoarder_size=1, channels_size=5, distribution_class=GaussGenerator,
+             distribution_arguments=dict(m=5, d=2)),
+        dict(hoarder_size=2, channels_size=2, distribution_class=GaussGenerator,
+             distribution_arguments=dict(m=5, d=2))
+    ]
 
-time = 0.0
-input_phase.channels[0].calculate_work_end_time(time)
-while time <= 100:
-    output_phase.process(time, second_phase)
-    second_phase.process(time, first_phase)
-    first_phase.process(time, input_phase)
-    input_phase.process(time, None)
-    time += 0.01
-
-print output_phase.responses_times
+    model = Model(100, channel_phases)
+    model.run()
