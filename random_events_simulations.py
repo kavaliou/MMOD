@@ -1,14 +1,13 @@
 from sys import argv
 from datetime import datetime
 
-from generator import MultiCongGenerator
+from generators import MultiCongGenerator
 
 
 class RandomEvent(object):
     def __init__(self, p_a):
         self.p_a = p_a
-        self.random_generator = MultiCongGenerator(datetime.now().microsecond % 63018038201, 63018038201, 123) \
-            .get_generator()
+        self.random_generator = MultiCongGenerator(datetime.now().microsecond % 63018038201, 63018038201, 123)
 
     def occurred(self):
         return next(self.random_generator) <= self.p_a
@@ -18,10 +17,8 @@ class ComplexRandomEvent(object):
     def __init__(self, p_a, p_b):
         self.p_a = p_a
         self.p_b = p_b
-        self.first_random_generator = MultiCongGenerator(datetime.now().microsecond % 63018038201, 63018038201, 123) \
-            .get_generator()
-        self.second_random_generator = MultiCongGenerator(datetime.now().microsecond % 63018038201, 63018038201, 123) \
-            .get_generator()
+        self.first_random_generator = MultiCongGenerator(datetime.now().microsecond % 63018038201, 63018038201, 123)
+        self.second_random_generator = MultiCongGenerator(datetime.now().microsecond % 63018038201, 63018038201, 123)
 
     def occurred(self):
         return next(self.first_random_generator) <= self.p_a and next(self.second_random_generator) <= self.p_b

@@ -1,7 +1,14 @@
+from random import randint
+
+from primesieve import nth_prime
+
+
 class GeneratorMixin(object):
-    def get_generator(self):
-        while True:
-            yield self.next_number()
+    def __iter__(self):
+        return self
+
+    def next(self):
+        return self.next_number()
 
 
 class MiddleOfSquareGenerator(GeneratorMixin):
@@ -31,14 +38,36 @@ class GaussGenerator(GeneratorMixin):
         self.m = m
         self.d = d
         self.R = [
-            MultiCongGenerator(num, 63018038201, 3018038 + i).get_generator()
-            for i, num in enumerate([
-                9929, 6301803820, 8038206301, 27751, 93563, 93277513,
-                9921, 6303820, 88206301, 271, 9563, 937513
-            ])
+            MultiCongGenerator(
+                nth_prime(randint(1000, 10000000)),
+                63018038201,
+                nth_prime(randint(10000, 100000))
+            ) for _ in range(n)
         ]
         self.n = n
 
     def next_number(self):
         sum_r = sum(map(next, self.R))
         return self.m + (self.d * (12/self.n)**0.5 * (sum_r - self.n/2))
+
+
+class UniformDistributionGenerator(GeneratorMixin):
+    def __init__(self, a, b):
+        self.a = a
+        self.b = b
+        self.R = MultiCongGenerator(
+            nth_prime(randint(1000, 10000000)),
+            63018038201,
+            nth_prime(randint(10000, 100000))
+        )
+
+    def next_number(self):
+        return self.a + (self.b - self.a) * next(self.R)
+
+
+class SimpsonDistributionGenerator(GeneratorMixin):
+    def __init__(self, a, b):
+        self.R = [UniformDistributionGenerator(a/2., b/2.) for _ in range(2)]
+
+    def next_number(self):
+        return sum(map(next, self.R))

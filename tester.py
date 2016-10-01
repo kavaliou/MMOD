@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 
-from generator import MiddleOfSquareGenerator, MultiCongGenerator, GaussGenerator
+from generators import MiddleOfSquareGenerator, MultiCongGenerator, \
+    GaussGenerator, UniformDistributionGenerator, SimpsonDistributionGenerator
 
 
 def build_hist(title, numbers, n, m):
@@ -32,26 +33,30 @@ def calculate_r(numbers, n, s):
     return (float(sum) * 12 / (n - s)) - 3
 
 
-# MiddleOfSquareGenerator 123 1123 3123
 if __name__ == '__main__':
-    build_hist('Gauss', GaussGenerator(0, 0.2).get_generator(), 100000, 100)
-    build_hist('Gauss', GaussGenerator(0, 0.5).get_generator(), 100000, 100)
-    build_hist('Gauss', GaussGenerator(0, 1).get_generator(), 100000, 100)
-    build_hist('Gauss', GaussGenerator(-2, 5).get_generator(), 100000, 100)
+    build_hist('Gauss', GaussGenerator(5, 2), 10000, 100)
+    build_hist('Uniform', UniformDistributionGenerator(3, 9), 10000, 100)
+    build_hist('Simpson', SimpsonDistributionGenerator(2, 5), 10000, 100)
+    build_hist('Gauss', GaussGenerator(5, 1), 10000, 100)
 
     exit()
 
+    build_hist('Gauss', GaussGenerator(0, 0.2), 100000, 100)
+    build_hist('Gauss', GaussGenerator(0, 0.5), 100000, 100)
+    build_hist('Gauss', GaussGenerator(0, 1), 100000, 100)
+    build_hist('Gauss', GaussGenerator(-2, 5), 100000, 100)
+
     for i in xrange(123, 4000, 1000):
-        print calculate_ter_ver_values(MiddleOfSquareGenerator(i).get_generator(), 10000)
-        print calculate_r(MiddleOfSquareGenerator(i).get_generator(), 10000, 15)
-        build_hist('Middle square method', MiddleOfSquareGenerator(i).get_generator(), 10000, 20)
+        print calculate_ter_ver_values(MiddleOfSquareGenerator(i), 10000)
+        print calculate_r(MiddleOfSquareGenerator(i), 10000, 15)
+        build_hist('Middle square method', MiddleOfSquareGenerator(i), 10000, 20)
 
     for i in (9929, 9059, 7873, 6949, 5791, 4547, 2287):
-        print calculate_ter_ver_values(MultiCongGenerator(i, 63018038201, 123).get_generator(), 63010)
-        print calculate_r(MultiCongGenerator(i, 63018038201, 123).get_generator(), 63010, 15)
+        print calculate_ter_ver_values(MultiCongGenerator(i, 63018038201, 123), 63010)
+        print calculate_r(MultiCongGenerator(i, 63018038201, 123), 63010, 15)
         build_hist(
             'Multiplicative congruent method',
-            MultiCongGenerator(i, 63018038201, 123).get_generator(),
+            MultiCongGenerator(i, 63018038201, 123),
             63010,
             20
         )
