@@ -1,5 +1,5 @@
 from imitation_modeling.channels import Channel, InputChannel
-from imitation_modeling.helpers import Hoarder
+from imitation_modeling.helpers import Hoarder, Request
 
 
 class Phase(object):
@@ -37,7 +37,7 @@ class InputPhase(Phase):
 
     def process(self, current_time, previous_phase):
         for channel in self.get_free_channels():
-            channel.calculate_work_end_time(current_time)
+            channel.push_request(current_time, Request(current_time))
 
 
 class OutputPhase(Phase):
@@ -47,8 +47,9 @@ class OutputPhase(Phase):
 
     def process(self, current_time, previous_phase):
         for previous_phase_channel in previous_phase.get_channels_with_response(current_time):
-            previous_phase_channel.take_away_response()
-            self.responses_times.append(round(current_time, 5))
+            request = previous_phase_channel.take_away_response()
+            request.processed_time = current_time
+            self.responses_times.append(request)
 
 
 class ChannelPhase(Phase):
@@ -62,16 +63,16 @@ class ChannelPhase(Phase):
     def process(self, current_time, previous_phase):
         for channel in self.get_free_channels():
             if self.hoarder.has_requests():
-                channel.calculate_work_end_time(current_time)
-                self.hoarder.dec()
+                request = self.hoarder.pop()
+                channel.push_request(current_time, request)
             elif previous_phase.has_channel_with_response(current_time):
                 previous_phase_channel = previous_phase.get_channel_with_response(current_time)
-                channel.calculate_work_end_time(current_time)
-                previous_phase_channel.take_away_response()
+                request = previous_phase_channel.take_away_response()
+                channel.push_request(current_time, request)
 
         for previous_phase_channel in previous_phase.get_channels_with_response(current_time):
             if self.hoarder.has_place():
-                previous_phase_channel.take_away_response()
-                self.hoarder.inc()
+                request = previous_phase_channel.take_away_response()
+                self.hoarder.append(request)
             else:
                 previous_phase_channel.block()

@@ -1,6 +1,6 @@
 from generators import GaussGenerator, SimpsonDistributionGenerator, \
     UniformDistributionGenerator, ExponentialDistributionGenerator
-from imitation_modeling.helpers import RejectedRequestsWatcher
+from imitation_modeling.helpers import RejectedRequestsWatcher, Request
 from imitation_modeling.phases import InputPhase, ChannelPhase, OutputPhase
 
 
@@ -13,7 +13,7 @@ class Model(object):
         self.rejected_requests_watcher = RejectedRequestsWatcher()
 
         input_phase = InputPhase(1, ExponentialDistributionGenerator, dict(lamb=1), self.rejected_requests_watcher)
-        input_phase.channels[0].calculate_work_end_time(self.current_time)
+        input_phase.channels[0].push_request(self.current_time, Request(self.current_time))
 
         self.phases.append(input_phase)
         for channel_phase in channel_phases:

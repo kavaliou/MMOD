@@ -6,20 +6,31 @@ class RejectedRequestsWatcher(object):
         self.rejected_requests.append(time)
 
 
+class Request(object):
+    def __init__(self, initial_time):
+        self.initial_time = initial_time
+        self.processed_time = None
+
+    def __repr__(self):
+        return 'Request: %s' % unicode(self)
+
+    def __unicode__(self):
+        return '%s - %s' % (self.initial_time, self.processed_time)
+
+
 class Hoarder(object):
     def __init__(self, size):
         self.size = size
-        self.requests = 0
+        self.requests = []
 
-    def inc(self):
-        self.requests += 1
+    def append(self, request):
+        self.requests.append(request)
 
-    def dec(self):
-        self.requests -= 1
+    def pop(self):
+        return self.requests.pop(0)
 
     def has_requests(self):
-        return self.requests > 0
+        return len(self.requests) > 0
 
     def has_place(self):
-        return self.requests < self.size
-
+        return len(self.requests) < self.size
