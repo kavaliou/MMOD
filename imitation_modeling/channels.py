@@ -3,7 +3,8 @@ class Channel(object):
     STATE_WORKING = 1
     STATE_BLOCKED = 2
 
-    def __init__(self, distribution_generator):
+    def __init__(self, identifier, distribution_generator):
+        self.id = identifier
         self.requests_factory = None
         self.generator = distribution_generator
         self.state = self.STATE_FREE
@@ -38,8 +39,8 @@ class Channel(object):
 
 
 class InputChannel(Channel):
-    def __init__(self, distribution_generator, requests_factory, rejected_requests_watcher=None):
-        super(InputChannel, self).__init__(distribution_generator)
+    def __init__(self, identifier, distribution_generator, requests_factory, rejected_requests_watcher=None):
+        super(InputChannel, self).__init__(identifier, distribution_generator)
         self.rejected_requests_watcher = rejected_requests_watcher
         self.requests_factory = requests_factory
 

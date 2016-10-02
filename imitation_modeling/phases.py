@@ -3,13 +3,14 @@ from imitation_modeling.helpers import Hoarder
 
 
 class Phase(object):
-    def __init__(self, channels_size, distribution_class=None, distribution_arguments=None,
+    def __init__(self, identifier, channels_size, distribution_class=None, distribution_arguments=None,
                  channel_class=None, channel_kwargs=None):
+        self.id = identifier
         channel_class = channel_class or Channel
         channel_kwargs = channel_kwargs or {}
         self.channels = [
-            channel_class(distribution_class(**distribution_arguments), **channel_kwargs)
-            for _ in xrange(channels_size)
+            channel_class(num+1, distribution_class(**distribution_arguments), **channel_kwargs)
+            for num, _ in enumerate(xrange(channels_size))
         ]
 
     def get_channels_with_response(self, current_time):
@@ -29,9 +30,10 @@ class Phase(object):
 
 
 class InputPhase(Phase):
-    def __init__(self, channels_size, distribution_class, distribution_arguments,
+    def __init__(self, identifier, channels_size, distribution_class, distribution_arguments,
                  requests_factory, rejected_requests_watcher=None):
         super(InputPhase, self).__init__(
+            identifier,
             channels_size, distribution_class, distribution_arguments,
             channel_class=InputChannel,
             channel_kwargs=dict(
@@ -46,26 +48,35 @@ class InputPhase(Phase):
 
 
 class OutputPhase(Phase):
-    def __init__(self):
-        super(OutputPhase, self).__init__(0)
-        self.responses_times = []
+    def __init__(self, identifier, processed_requests_watcher):
+        super(OutputPhase, self).__init__(identifier, 0)
+        self.processed_requests_watcher = processed_requests_watcher
 
     def process(self, current_time, previous_phase):
         for previous_phase_channel in previous_phase.get_channels_with_response(current_time):
             request = previous_phase_channel.take_away_response()
             request.processed_time = current_time
-            self.responses_times.append(request)
+            self.processed_requests_watcher.append(request)
 
 
 class ChannelPhase(Phase):
-    def __init__(self, hoarder_size, channels_size,
-                 distribution_class, distribution_arguments):
+    def __init__(self, identifier, hoarder_size, channels_size,
+                 distribution_class, distribution_arguments,
+                 channel_phase_watcher=None):
         super(ChannelPhase, self).__init__(
-            channels_size, distribution_class, distribution_arguments
+            identifier, channels_size, distribution_class, distribution_arguments
         )
+        self.channel_phase_watcher = channel_phase_watcher
+        self.channel_phase_watcher.init(map(lambda x: x.id, self.channels))
         self.hoarder = Hoarder(hoarder_size)
 
     def process(self, current_time, previous_phase):
+        if self.channel_phase_watcher is not None:
+            self.channel_phase_watcher.views += 1
+            self.channel_phase_watcher.hoarder_lengths.append(len(self.hoarder))
+            for channel in self.channels:
+                self.channel_phase_watcher.channels_states[channel.id][channel.state] += 1
+
         for channel in self.get_free_channels():
             if self.hoarder.has_requests():
                 request = self.hoarder.pop()

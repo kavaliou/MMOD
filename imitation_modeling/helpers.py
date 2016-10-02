@@ -1,15 +1,45 @@
-class RejectedRequestsWatcher(object):
-    def __init__(self):
-        self.rejected_requests = []
+class PhaseWatcher(object):
+    def __init__(self, identifier):
+        self.phase_id = identifier
+        self.hoarder_lengths = []
+        self.channels_states = {}
+        self.views = 0
 
-    def append(self, time):
-        self.rejected_requests.append(time)
+    def init(self, channels_ids):
+        for identifier in channels_ids:
+            self.channels_states[identifier] = {
+                0: 0,
+                1: 0,
+                2: 0
+            }
+
+
+class RequestsWatcher(object):
+    def __init__(self):
+        self.requests = []
+
+    def append(self, request):
+        self.requests.append(request)
+
+    def get_all(self):
+        return self.requests
+
+
+class RejectedRequestsWatcher(RequestsWatcher):
+    pass
+
+
+class ProcessedRequestsWatcher(RequestsWatcher):
+    pass
 
 
 class Request(object):
     def __init__(self, initial_time):
         self.initial_time = initial_time
         self.processed_time = None
+
+    def time_in_model(self):
+        return self.processed_time - self.initial_time
 
     def __repr__(self):
         return 'Request: %s' % unicode(self)
@@ -28,7 +58,9 @@ class RequestsFactory(object):
 
     def create_request(self, time):
         self.requests_count += 1
+
         print self.requests_count
+
         return Request(time)
 
 
@@ -48,3 +80,6 @@ class Hoarder(object):
 
     def has_place(self):
         return len(self.requests) < self.size
+
+    def __len__(self):
+        return len(self.requests)

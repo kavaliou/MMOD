@@ -1,7 +1,7 @@
-from generators import GaussGenerator, SimpsonDistributionGenerator, \
-    UniformDistributionGenerator, ExponentialDistributionGenerator
+from generators import ExponentialDistributionGenerator
 from imitation_modeling.channels import Channel
-from imitation_modeling.helpers import RejectedRequestsWatcher, RequestsFactory
+from imitation_modeling.helpers import RejectedRequestsWatcher, ProcessedRequestsWatcher, \
+    RequestsFactory, PhaseWatcher
 from imitation_modeling.phases import InputPhase, ChannelPhase, OutputPhase
 
 
@@ -12,10 +12,12 @@ class Model(object):
         self.time_delta = time_delta
         self.phases = []
         self.rejected_requests_watcher = RejectedRequestsWatcher()
+        self.processed_requests_watcher = ProcessedRequestsWatcher()
         self.requests_factory = RequestsFactory(number_of_requests)
+        self.phase_watchers = []
 
         input_phase = InputPhase(
-            1, ExponentialDistributionGenerator, dict(lamb=1),
+            None, 1, ExponentialDistributionGenerator, dict(lamb=1),
             self.requests_factory, self.rejected_requests_watcher
         )
         input_phase.channels[0].push_request(
@@ -25,8 +27,10 @@ class Model(object):
 
         self.phases.append(input_phase)
         for channel_phase in channel_phases:
-            self.phases.append(ChannelPhase(**channel_phase))
-        self.phases.append(OutputPhase())
+            phase_watcher = PhaseWatcher(channel_phase.get('identifier'))
+            self.phase_watchers.append(phase_watcher)
+            self.phases.append(ChannelPhase(channel_phase_watcher=phase_watcher, **channel_phase))
+        self.phases.append(OutputPhase(None, self.processed_requests_watcher))
 
     def has_requests_inside(self):
         return any([any(map(lambda x: x.state != Channel.STATE_FREE, phase.channels)) for phase in self.phases[1:-1]])
@@ -37,24 +41,3 @@ class Model(object):
                 current_phase.process(self.current_time, previous_phase)
 
             self.current_time += self.time_delta
-
-        print len(self.phases[-1].responses_times)
-        print len(self.rejected_requests_watcher.rejected_requests)
-        # print self.phases[-1].responses_times
-        # print self.rejected_requests_watcher.rejected_requests
-
-
-if __name__ == '__main__':
-    channel_phases = [
-        dict(hoarder_size=3, channels_size=4, distribution_class=GaussGenerator,
-             distribution_arguments=dict(m=5, d=2)),
-        dict(hoarder_size=3, channels_size=3, distribution_class=UniformDistributionGenerator,
-             distribution_arguments=dict(a=3, b=9)),
-        dict(hoarder_size=3, channels_size=5, distribution_class=SimpsonDistributionGenerator,
-             distribution_arguments=dict(a=2, b=5)),
-        dict(hoarder_size=3, channels_size=4, distribution_class=GaussGenerator,
-             distribution_arguments=dict(m=5, d=1))
-    ]
-
-    model = Model(10000, channel_phases)
-    model.run()
