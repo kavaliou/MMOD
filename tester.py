@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 
 from generators import MiddleOfSquareGenerator, MultiCongGenerator, \
     GaussGenerator, UniformDistributionGenerator, SimpsonDistributionGenerator, \
-    ExponentialDistributionGenerator
+    ExponentialDistributionGenerator, TriangularDistributionGenerator
 from imitation_modeling.imitation_model import Model
 
 
@@ -98,6 +98,11 @@ def discrete(array, n):
 
 
 def test_distribution_generators():
+    build_hist_from_generator('Triangular', TriangularDistributionGenerator(3, 7, max), 10000, 100)
+    build_hist_from_generator('Triangular', TriangularDistributionGenerator(3, 7, min), 10000, 100)
+
+    exit()
+
     build_hist_from_generator('Exponential', ExponentialDistributionGenerator(1), 10000, 100)
     build_hist_from_generator('Gauss', GaussGenerator(5, 2), 10000, 100)
     build_hist_from_generator('Uniform', UniformDistributionGenerator(3, 9), 10000, 100)
@@ -139,7 +144,20 @@ def imitation_model():
              distribution_arguments=dict(m=5, d=1))
     ]
 
-    n = 100
+    channel_phases = [
+        dict(identifier=1, hoarder_size=3, channels_size=4, distribution_class=GaussGenerator,
+             distribution_arguments=dict(m=5, d=1)),
+        dict(identifier=2, hoarder_size=3, channels_size=3, distribution_class=SimpsonDistributionGenerator,
+             distribution_arguments=dict(a=2, b=5)),
+        dict(identifier=3, hoarder_size=3, channels_size=5, distribution_class=TriangularDistributionGenerator,
+             distribution_arguments=dict(a=3, b=7, func=min)),
+        dict(identifier=4, hoarder_size=3, channels_size=4, distribution_class=GaussGenerator,
+             distribution_arguments=dict(m=5, d=1)),
+        dict(identifier=5, hoarder_size=3, channels_size=5, distribution_class=UniformDistributionGenerator,
+             distribution_arguments=dict(a=3, b=9))
+    ]
+
+    n = 10000
     model = Model(n, channel_phases)
     model.run()
 
@@ -175,7 +193,7 @@ def imitation_model():
 
 if __name__ == '__main__':
     # test_distribution_generators()
-
+    # exit()
     # test_discrete()
     # discrete(
     #     [

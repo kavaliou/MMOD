@@ -81,3 +81,14 @@ class ExponentialDistributionGenerator(GeneratorMixin):
 
     def next_number(self):
         return (-1./self.lamb) * math.log(next(self.R))
+
+
+class TriangularDistributionGenerator(GeneratorMixin):
+    def __init__(self, a, b, func):
+        self.func = func
+        self.a = a
+        self.b = b
+        self.R = [UniformDistributionGenerator(0, 1) for _ in xrange(2)]
+
+    def next_number(self):
+        return self.a + (self.b - self.a) * self.func(*map(next, self.R))
