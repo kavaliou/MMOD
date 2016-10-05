@@ -71,12 +71,6 @@ class ChannelPhase(Phase):
         self.hoarder = Hoarder(hoarder_size)
 
     def process(self, current_time, previous_phase):
-        if self.channel_phase_watcher is not None:
-            self.channel_phase_watcher.views += 1
-            self.channel_phase_watcher.hoarder_lengths.append(len(self.hoarder))
-            for channel in self.channels:
-                self.channel_phase_watcher.channels_states[channel.id][channel.state] += 1
-
         for channel in self.get_free_channels():
             if self.hoarder.has_requests():
                 request = self.hoarder.pop()
@@ -92,3 +86,10 @@ class ChannelPhase(Phase):
                 self.hoarder.append(request)
             else:
                 previous_phase_channel.block()
+
+        if self.channel_phase_watcher is not None:
+            self.channel_phase_watcher.views += 1
+            self.channel_phase_watcher.hoarder_lengths.append(len(self.hoarder))
+            for channel in self.channels:
+                self.channel_phase_watcher.channels_states[channel.id][channel.state] += 1
+

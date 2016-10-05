@@ -44,6 +44,59 @@ def calculate_r(numbers, n, s):
     return (float(sum) * 12 / (n - s)) - 3
 
 
+def test_discrete():
+    def exponential(lamb, x):
+        import math
+        return (-1./lamb) * math.log(x)
+
+    discrete(create_p(exponential), 10000)
+
+
+def create_p(fun):
+    my_lambda = 2
+    x = 0.01
+    d_x = 0.01
+    current_fun = fun(my_lambda, x)
+
+    pi = [(0.0, (0.0, current_fun))]
+    while x <= 1.0:
+        f = fun(my_lambda, x+d_x)
+        pi.append((x, (current_fun, current_fun + f)))
+        current_fun += f
+        x += d_x
+
+    maximum = pi[-1][-1][-1]
+    return [(p[0], (p[1][0]/maximum, p[1][1]/maximum)) for p in pi]
+
+
+def discrete(array, n):
+    frequency = [0] * len(array)
+    gen = UniformDistributionGenerator(0, 1)
+    for i in [next(gen) for _ in xrange(n)]:
+        frequency[array.index(filter(lambda (_, (mi, ma)): mi <= i <= ma, array)[0])] += 1
+
+    previous_delta = array[0][0]
+    x, y = [], []
+    for q in zip(map(lambda xw: xw[0], array[1:]), frequency[:-1]):
+        x.append(previous_delta)
+        x.append(q[0])
+        previous_delta = q[0]
+        y.append(q[1])
+        y.append(q[1])
+    x.append(previous_delta)
+    x.append(1)
+    y.append(frequency[-1])
+    y.append(frequency[-1])
+
+    plt.subplot(1, 1, 1)
+    axes = plt.gca()
+    axes.set_xlim([0, 1])
+    axes.set_ylim([0, max(*frequency)])
+    plt.plot(x, y)
+    plt.title('Discrete')
+    plt.show()
+
+
 def test_distribution_generators():
     build_hist_from_generator('Exponential', ExponentialDistributionGenerator(1), 10000, 100)
     build_hist_from_generator('Gauss', GaussGenerator(5, 2), 10000, 100)
@@ -109,7 +162,7 @@ def imitation_model():
     print float(len(model.rejected_requests_watcher.get_all())) / n
 
     for phase_watcher in model.phase_watchers:
-        print '{id}:'.format(id=phase_watcher.phase_id)
+        print 'phase {id}:'.format(id=phase_watcher.phase_id)
         print '--hoarder: {0}'.format(sum(phase_watcher.hoarder_lengths) / float(phase_watcher.views))
         for identifier, state in phase_watcher.channels_states.iteritems():
             print '--channel {id}: free {free}, working {working}, blocked {blocked}'.format(
@@ -121,4 +174,25 @@ def imitation_model():
 
 
 if __name__ == '__main__':
+    # test_distribution_generators()
+
+    # test_discrete()
+    # discrete(
+    #     [
+    #         (0.0, (0.0, 0.2)),
+    #         (0.2, (0.2, 0.25)),
+    #         (0.4, (0.25, 0.30)),
+    #         (0.6, (0.30, 0.50)),
+    #         (0.8, (0.50, 1)),
+    #     ],
+    #     10000
+    # )
+    # discrete(
+    #     [
+    #         (0.0, (0.0, 0.49)),
+    #         (0.33, (0.49, 0.98)),
+    #         (0.66, (0.98, 1.0)),
+    #     ],
+    #     10000
+    # )
     imitation_model()
